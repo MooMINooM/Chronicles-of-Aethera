@@ -30,6 +30,8 @@ export default class GreybrookScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, width, height);
     this.cameras.main.setBounds(0, 0, width, height);
 
+    this.blockers = [];
+
     this.createTerrain();
     this.createRoads();
     this.createWater();
@@ -281,13 +283,11 @@ export default class GreybrookScene extends Phaser.Scene {
     this.miniMapMeta = { mapX, mapY, mapW, mapH, scaleX, scaleY };
   }
 
-  addStaticBlocker(x, y, w, h, visible = true) {
-    if (!this.blockers) this.blockers = this.physics.add.staticGroup();
-
-    const blocker = this.add.rectangle(x, y, w, h, 0x000000, visible ? 0 : 0);
+  addStaticBlocker(x, y, w, h) {
+    const blocker = this.add.rectangle(x, y, w, h, 0x000000, 0);
     this.physics.add.existing(blocker, true);
     blocker.setVisible(false);
-    this.blockers.add(blocker);
+    this.blockers.push(blocker);
     return blocker;
   }
 
