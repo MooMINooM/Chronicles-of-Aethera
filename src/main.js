@@ -1,4 +1,5 @@
-import Phaser from 'phaser';
+const Phaser = window.Phaser;
+
 import BootScene from './scenes/BootScene.js';
 import MenuScene from './scenes/MenuScene.js';
 import GreybrookScene from './scenes/GreybrookScene.js';
