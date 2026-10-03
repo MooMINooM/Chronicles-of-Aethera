@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import Player from '../player/Player.js';
 
 export default class GreybrookScene extends Phaser.Scene {
