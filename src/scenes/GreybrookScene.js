@@ -1,5 +1,23 @@
 import Phaser from 'phaser';
 import Player from '../player/Player.js';
+import { GREYBROOK } from '../data/greybrookLayout.js';
+
+const COLORS = {
+  grass: 0x799965,
+  grassDark: 0x658254,
+  roadMain: 0xb49a72,
+  roadSide: 0xa98e67,
+  water: 0x5c91b8,
+  wall: 0x66635c,
+  building: 0x8d6248,
+  buildingOutline: 0x4a3326,
+  civic: 0x766b8c,
+  shop: 0x9c704a,
+  house: 0x8b735f,
+  craft: 0x7b6653,
+  farm: 0x9d9855,
+  landmark: 0xb8b0a0
+};
 
 export default class GreybrookScene extends Phaser.Scene {
   constructor() {
@@ -7,96 +25,290 @@ export default class GreybrookScene extends Phaser.Scene {
   }
 
   create() {
-    const worldWidth = 2200;
-    const worldHeight = 1500;
+    const { width, height } = GREYBROOK.world;
 
-    this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
-    this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+    this.physics.world.setBounds(0, 0, width, height);
+    this.cameras.main.setBounds(0, 0, width, height);
 
-    this.createGround(worldWidth, worldHeight);
-    this.createGreybrookPlaceholders();
+    this.createTerrain();
+    this.createRoads();
+    this.createWater();
+    this.createFarmsAndGroves();
+    this.createTownWalls();
+    this.createBuildings();
+    this.createLandmarks();
+    this.createNPCs();
+    this.createDistrictLabels();
 
-    this.player = new Player(this, 1100, 900);
-    this.physics.add.collider(this.player, this.walls);
+    this.player = new Player(this, GREYBROOK.spawn.x, GREYBROOK.spawn.y);
+    this.physics.add.collider(this.player, this.blockers);
 
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
-    this.cameras.main.setZoom(1.15);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.setZoom(1);
 
-    this.add.text(18, 18, 'Greybrook — Prototype\nWASD to move', {
-      fontFamily: 'Arial',
-      fontSize: '18px',
-      color: '#ffffff',
-      backgroundColor: '#00000088',
-      padding: { x: 10, y: 8 }
-    }).setScrollFactor(0).setDepth(100);
-
-    this.add.text(1100, 665, 'GREYBROOK TOWN SQUARE', {
-      fontFamily: 'Arial',
-      fontSize: '24px',
-      color: '#493b2f'
-    }).setOrigin(0.5);
+    this.createHUD();
+    this.createMiniMap();
   }
 
-  createGround(width, height) {
-    this.add.rectangle(width / 2, height / 2, width, height, 0x7e9d67);
-
-    const road = 0xb79c72;
-    this.add.rectangle(width / 2, height / 2, 250, height, road);
-    this.add.rectangle(width / 2, 700, width, 220, road);
+  createTerrain() {
+    const { width, height } = GREYBROOK.world;
+    this.add.rectangle(width / 2, height / 2, width, height, COLORS.grass);
 
     const grid = this.add.graphics();
-    grid.lineStyle(1, 0x000000, 0.06);
+    grid.lineStyle(1, 0x000000, 0.045);
     for (let x = 0; x <= width; x += 64) grid.lineBetween(x, 0, x, height);
     for (let y = 0; y <= height; y += 64) grid.lineBetween(0, y, width, y);
   }
 
-  createGreybrookPlaceholders() {
-    this.walls = this.physics.add.staticGroup();
+  createRoads() {
+    GREYBROOK.roads.forEach((road) => {
+      const color = road.kind === 'main' ? COLORS.roadMain : COLORS.roadSide;
+      this.add.rectangle(road.x, road.y, road.w, road.h, color);
+    });
+  }
 
-    const addBuilding = (x, y, w, h, label) => {
-      const building = this.add.rectangle(x, y, w, h, 0x8c5d3f)
-        .setStrokeStyle(4, 0x4a2f22);
-      this.physics.add.existing(building, true);
-      this.walls.add(building);
+  createWater() {
+    GREYBROOK.water.forEach((area) => {
+      this.add.rectangle(area.x, area.y, area.w, area.h, COLORS.water)
+        .setStrokeStyle(4, 0x3f7194);
 
-      this.add.text(x, y, label, {
+      this.add.text(area.x, area.y, area.label, {
+        fontFamily: 'Arial',
+        fontSize: '20px',
+        color: '#d9f1ff',
+        backgroundColor: '#315b7888',
+        padding: { x: 8, y: 5 }
+      }).setOrigin(0.5).setAngle(area.h > area.w ? 90 : 0);
+
+      this.addStaticBlocker(area.x, area.y, area.w, area.h, false);
+    });
+  }
+
+  createFarmsAndGroves() {
+    GREYBROOK.farms.forEach((farm) => {
+      this.add.rectangle(farm.x, farm.y, farm.w, farm.h, COLORS.farm)
+        .setStrokeStyle(3, 0x6f6a39);
+
+      const rows = this.add.graphics();
+      rows.lineStyle(2, 0x6f6a39, 0.6);
+      for (let y = farm.y - farm.h / 2 + 30; y < farm.y + farm.h / 2; y += 45) {
+        rows.lineBetween(farm.x - farm.w / 2 + 20, y, farm.x + farm.w / 2 - 20, y);
+      }
+
+      this.add.text(farm.x, farm.y, farm.label, {
         fontFamily: 'Arial',
         fontSize: '16px',
-        color: '#fff4dd',
-        align: 'center'
+        color: '#393820',
+        backgroundColor: '#eee7bd99',
+        padding: { x: 6, y: 4 }
       }).setOrigin(0.5);
-    };
+    });
 
-    addBuilding(650, 420, 260, 180, 'BLACKSMITH');
-    addBuilding(1550, 420, 270, 180, 'GENERAL STORE');
-    addBuilding(690, 1030, 300, 190, 'GREYBROOK INN');
-    addBuilding(1510, 1040, 270, 185, 'APOTHECARY');
-    addBuilding(350, 700, 230, 170, 'OLD HOUSE');
+    GREYBROOK.groves.forEach((grove) => {
+      this.add.rectangle(grove.x, grove.y, grove.w, grove.h, COLORS.grassDark)
+        .setStrokeStyle(3, 0x415d3c);
 
-    const fountain = this.add.circle(1100, 700, 70, 0x5b9bd5)
-      .setStrokeStyle(12, 0xb6b0a1);
-    this.physics.add.existing(fountain, true);
-    this.walls.add(fountain);
+      const dots = this.add.graphics();
+      dots.fillStyle(0x355739, 1);
+      for (let x = grove.x - grove.w / 2 + 35; x < grove.x + grove.w / 2; x += 70) {
+        for (let y = grove.y - grove.h / 2 + 35; y < grove.y + grove.h / 2; y += 70) {
+          dots.fillCircle(x, y, 16);
+        }
+      }
 
-    const npcData = [
-      { x: 1030, y: 590, name: 'Rowan' },
-      { x: 1210, y: 770, name: 'Mira' },
-      { x: 1010, y: 840, name: 'Old Garrick' }
-    ];
-
-    npcData.forEach(({ x, y, name }) => {
-      this.add.circle(x, y, 18, 0xe7a85c);
-      this.add.text(x, y - 34, name, {
+      this.add.text(grove.x, grove.y, grove.label, {
         fontFamily: 'Arial',
-        fontSize: '14px',
-        color: '#1b1b1b',
-        backgroundColor: '#ffffffbb',
+        fontSize: '16px',
+        color: '#e6f3df',
+        backgroundColor: '#2c493899',
+        padding: { x: 6, y: 4 }
+      }).setOrigin(0.5);
+    });
+  }
+
+  createTownWalls() {
+    GREYBROOK.walls.forEach((wall) => {
+      this.add.rectangle(wall.x, wall.y, wall.w, wall.h, COLORS.wall)
+        .setStrokeStyle(4, 0x3f3d39);
+      this.addStaticBlocker(wall.x, wall.y, wall.w, wall.h);
+    });
+  }
+
+  createBuildings() {
+    GREYBROOK.buildings.forEach((b) => {
+      const fill = this.getBuildingColor(b.type);
+      const rect = this.add.rectangle(b.x, b.y, b.w, b.h, fill)
+        .setStrokeStyle(4, COLORS.buildingOutline);
+
+      rect.setData('layoutId', b.id);
+      rect.setData('assetKey', b.assetKey);
+      rect.setData('buildingType', b.type);
+
+      this.addStaticBlocker(b.x, b.y, b.w, b.h);
+
+      this.add.text(b.x, b.y - 8, b.name.toUpperCase(), {
+        fontFamily: 'Arial',
+        fontSize: b.w < 300 ? '13px' : '15px',
+        color: '#fff6df',
+        align: 'center',
+        wordWrap: { width: Math.max(180, b.w - 25) }
+      }).setOrigin(0.5);
+
+      this.add.text(b.x, b.y + 28, `[${b.assetKey}]`, {
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        color: '#e6d4c1'
+      }).setOrigin(0.5);
+    });
+  }
+
+  createLandmarks() {
+    GREYBROOK.landmarks.forEach((l) => {
+      if (l.radius) {
+        const obj = this.add.circle(l.x, l.y, l.radius, l.type === 'tree' ? 0x47704a : COLORS.landmark)
+          .setStrokeStyle(4, 0x5c554b);
+        obj.setData('assetKey', l.assetKey);
+        this.addStaticBlocker(l.x, l.y, l.radius * 2, l.radius * 2);
+      } else {
+        const obj = this.add.rectangle(l.x, l.y, l.w, l.h, COLORS.landmark)
+          .setStrokeStyle(3, 0x5c554b);
+        obj.setData('assetKey', l.assetKey);
+        this.addStaticBlocker(l.x, l.y, l.w, l.h);
+      }
+
+      this.add.text(l.x, l.y - (l.radius || l.h || 40) / 2 - 20, l.name, {
+        fontFamily: 'Arial',
+        fontSize: '13px',
+        color: '#2d2923',
+        backgroundColor: '#fff6dfbb',
         padding: { x: 4, y: 2 }
       }).setOrigin(0.5);
     });
   }
 
+  createNPCs() {
+    GREYBROOK.npcs.forEach((npc) => {
+      const marker = this.add.circle(npc.x, npc.y, 18, 0xe5a35a)
+        .setStrokeStyle(3, 0x74451f);
+      marker.setData('npcId', npc.id);
+
+      this.add.text(npc.x, npc.y - 38, `${npc.name} — ${npc.role}`, {
+        fontFamily: 'Arial',
+        fontSize: '12px',
+        color: '#1f1b17',
+        backgroundColor: '#fff7e5cc',
+        padding: { x: 4, y: 2 }
+      }).setOrigin(0.5);
+    });
+  }
+
+  createDistrictLabels() {
+    GREYBROOK.districts.forEach((d) => {
+      this.add.text(d.x, d.y, d.name, {
+        fontFamily: 'Arial',
+        fontSize: '20px',
+        color: '#2f2b27',
+        backgroundColor: '#f4ead2aa',
+        padding: { x: 8, y: 5 }
+      }).setOrigin(0.5).setDepth(5);
+    });
+  }
+
+  createHUD() {
+    this.add.text(18, 18, 'GREYBROOK — FULL PLACEHOLDER LAYOUT\nWASD / Arrow Keys to move', {
+      fontFamily: 'Arial',
+      fontSize: '17px',
+      color: '#ffffff',
+      backgroundColor: '#000000aa',
+      padding: { x: 10, y: 8 }
+    }).setScrollFactor(0).setDepth(200);
+
+    this.add.text(18, 82, 'All rectangles are replaceable by final assets later.', {
+      fontFamily: 'Arial',
+      fontSize: '13px',
+      color: '#d8e4d1',
+      backgroundColor: '#00000088',
+      padding: { x: 8, y: 5 }
+    }).setScrollFactor(0).setDepth(200);
+  }
+
+  createMiniMap() {
+    const mapX = 1070;
+    const mapY = 95;
+    const mapW = 180;
+    const mapH = 128;
+    const scaleX = mapW / GREYBROOK.world.width;
+    const scaleY = mapH / GREYBROOK.world.height;
+
+    this.add.rectangle(mapX, mapY, mapW + 16, mapH + 30, 0x111111, 0.78)
+      .setScrollFactor(0).setDepth(200)
+      .setStrokeStyle(2, 0xffffff, 0.35);
+
+    this.add.text(mapX, mapY - mapH / 2 - 9, 'GREYBROOK MAP', {
+      fontFamily: 'Arial',
+      fontSize: '11px',
+      color: '#ffffff'
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+
+    const g = this.add.graphics().setScrollFactor(0).setDepth(201);
+    g.fillStyle(0x799965, 1);
+    g.fillRect(mapX - mapW / 2, mapY - mapH / 2, mapW, mapH);
+
+    g.fillStyle(0xb49a72, 1);
+    GREYBROOK.roads.forEach((r) => {
+      g.fillRect(
+        mapX - mapW / 2 + (r.x - r.w / 2) * scaleX,
+        mapY - mapH / 2 + (r.y - r.h / 2) * scaleY,
+        r.w * scaleX,
+        r.h * scaleY
+      );
+    });
+
+    g.fillStyle(0x8d6248, 1);
+    GREYBROOK.buildings.forEach((b) => {
+      g.fillRect(
+        mapX - mapW / 2 + (b.x - b.w / 2) * scaleX,
+        mapY - mapH / 2 + (b.y - b.h / 2) * scaleY,
+        Math.max(2, b.w * scaleX),
+        Math.max(2, b.h * scaleY)
+      );
+    });
+
+    this.miniPlayer = this.add.circle(mapX, mapY, 3.5, 0xffffff)
+      .setScrollFactor(0)
+      .setDepth(203);
+
+    this.miniMapMeta = { mapX, mapY, mapW, mapH, scaleX, scaleY };
+  }
+
+  addStaticBlocker(x, y, w, h, visible = true) {
+    if (!this.blockers) this.blockers = this.physics.add.staticGroup();
+
+    const blocker = this.add.rectangle(x, y, w, h, 0x000000, visible ? 0 : 0);
+    this.physics.add.existing(blocker, true);
+    blocker.setVisible(false);
+    this.blockers.add(blocker);
+    return blocker;
+  }
+
+  getBuildingColor(type) {
+    if (['town-hall', 'civic', 'school', 'library', 'clinic', 'temple', 'guild'].includes(type)) return COLORS.civic;
+    if (['shop', 'market', 'inn'].includes(type)) return COLORS.shop;
+    if (['house'].includes(type)) return COLORS.house;
+    if (['craft', 'warehouse', 'utility', 'mill'].includes(type)) return COLORS.craft;
+    if (['farm'].includes(type)) return COLORS.farm;
+    return COLORS.building;
+  }
+
   update() {
     this.player?.update();
+
+    if (this.miniPlayer && this.miniMapMeta && this.player) {
+      const { mapX, mapY, mapW, mapH, scaleX, scaleY } = this.miniMapMeta;
+      this.miniPlayer.setPosition(
+        mapX - mapW / 2 + this.player.x * scaleX,
+        mapY - mapH / 2 + this.player.y * scaleY
+      );
+    }
   }
 }
