@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+const Phaser = window.Phaser;
 import Player from '../player/Player.js';
 import { GREYBROOK } from '../data/greybrookLayout.js';
 
