@@ -54,13 +54,17 @@ export default class GreybrookScene extends Phaser.Scene {
 
   createTerrain() {
     const { width, height } = GREYBROOK.world;
-    // Frame 65 is a plain grass tile from the imported 16 px atlas.  Keeping
-    // this choice here makes the eventual terrain palette explicit and easy
-    // to replace once the full tile index map is authored.
-    this.add.tileSprite(width / 2, height / 2, width / 4, height / 4, 'terrain_atlas_16', 65)
-      .setOrigin(0.5)
-      .setScale(4)
-      .setDepth(-20);
+    // Frame 65 is a plain grass tile from the imported 16 px atlas. TileSprite
+    // repeats the complete source image rather than a cropped atlas frame, so
+    // lay down the selected frame explicitly to preserve the intended tile.
+    for (let x = 0; x < width; x += 64) {
+      for (let y = 0; y < height; y += 64) {
+        this.add.image(x, y, 'terrain_atlas_16', 65)
+          .setOrigin(0)
+          .setScale(4)
+          .setDepth(-20);
+      }
+    }
   }
 
   createRoads() {
