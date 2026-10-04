@@ -46,6 +46,9 @@ export default class BootScene extends Phaser.Scene {
       frameWidth: 32,
       frameHeight: 32
     });
+    this.load.image('building_tower_blue', 'assets/building_tower_blue.png');
+    this.load.image('building_house_small_blue', 'assets/building_house_small_blue.png');
+    this.load.image('building_house_large_blue', 'assets/building_house_large_blue.png');
   }
 
   create() {

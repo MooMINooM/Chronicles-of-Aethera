@@ -159,14 +159,23 @@ export default class GreybrookScene extends Phaser.Scene {
   createBuildings() {
     GREYBROOK.buildings.forEach((b) => {
       const fill = this.getBuildingColor(b.type);
+      const buildingArt = this.getBuildingArt(b.type);
       const rect = this.add.rectangle(b.x, b.y, b.w, b.h, fill)
-        .setStrokeStyle(4, COLORS.buildingOutline);
+        .setStrokeStyle(4, COLORS.buildingOutline)
+        .setVisible(!buildingArt);
 
       rect.setData('layoutId', b.id);
       rect.setData('assetKey', b.assetKey);
       rect.setData('buildingType', b.type);
 
       this.addStaticBlocker(b.x, b.y, b.w, b.h);
+
+      if (buildingArt) {
+        this.add.image(b.x, b.y + b.h / 2, buildingArt.key)
+          .setOrigin(0.5, 1)
+          .setScale(buildingArt.scale)
+          .setDepth(b.y + 1);
+      }
 
       if (b.id === 'mill') {
         this.add.sprite(b.x, b.y + 20, 'prop_windmill', 0)
@@ -332,6 +341,15 @@ export default class GreybrookScene extends Phaser.Scene {
     if (['craft', 'warehouse', 'utility', 'mill'].includes(type)) return COLORS.craft;
     if (['farm'].includes(type)) return COLORS.farm;
     return COLORS.building;
+  }
+
+  getBuildingArt(type) {
+    if (type === 'tower') return { key: 'building_tower_blue', scale: 2 };
+    if (['gate'].includes(type)) return null;
+    if (['house', 'farm', 'craft', 'warehouse', 'utility', 'mill'].includes(type)) {
+      return { key: 'building_house_small_blue', scale: 3 };
+    }
+    return { key: 'building_house_large_blue', scale: 4 };
   }
 
   update() {
