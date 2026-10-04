@@ -1,14 +1,16 @@
 const Phaser = window.Phaser;
 
-export default class Player extends Phaser.GameObjects.Rectangle {
+export default class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
-    super(scene, x, y, 34, 42, 0x5ca9e6);
+    super(scene, x, y, 'player_base_walk', 0);
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
     this.body.setCollideWorldBounds(true);
-    this.body.setSize(28, 34);
+    this.body.setSize(28, 30);
+    this.body.setOffset(34, 30);
+    this.setDepth(20);
     this.speed = 260;
 
     this.keys = scene.input.keyboard.addKeys({
@@ -19,6 +21,14 @@ export default class Player extends Phaser.GameObjects.Rectangle {
     });
 
     this.cursors = scene.input.keyboard.createCursorKeys();
+    if (!scene.anims.exists('player-walk')) {
+      scene.anims.create({
+        key: 'player-walk',
+        frames: scene.anims.generateFrameNumbers('player_base_walk', { start: 0, end: 7 }),
+        frameRate: 10,
+        repeat: -1
+      });
+    }
   }
 
   update() {
@@ -31,5 +41,12 @@ export default class Player extends Phaser.GameObjects.Rectangle {
 
     velocity.normalize().scale(this.speed);
     this.body.setVelocity(velocity.x, velocity.y);
+
+    if (velocity.lengthSq() > 0) {
+      this.anims.play('player-walk', true);
+    } else {
+      this.anims.stop();
+      this.setFrame(0);
+    }
   }
 }

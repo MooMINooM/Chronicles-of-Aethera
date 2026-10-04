@@ -54,12 +54,13 @@ export default class GreybrookScene extends Phaser.Scene {
 
   createTerrain() {
     const { width, height } = GREYBROOK.world;
-    this.add.rectangle(width / 2, height / 2, width, height, COLORS.grass);
-
-    const grid = this.add.graphics();
-    grid.lineStyle(1, 0x000000, 0.045);
-    for (let x = 0; x <= width; x += 64) grid.lineBetween(x, 0, x, height);
-    for (let y = 0; y <= height; y += 64) grid.lineBetween(0, y, width, y);
+    // Frame 65 is a plain grass tile from the imported 16 px atlas.  Keeping
+    // this choice here makes the eventual terrain palette explicit and easy
+    // to replace once the full tile index map is authored.
+    this.add.tileSprite(width / 2, height / 2, width / 4, height / 4, 'terrain_atlas_16', 65)
+      .setOrigin(0.5)
+      .setScale(4)
+      .setDepth(-20);
   }
 
   createRoads() {
@@ -110,11 +111,14 @@ export default class GreybrookScene extends Phaser.Scene {
       this.add.rectangle(grove.x, grove.y, grove.w, grove.h, COLORS.grassDark)
         .setStrokeStyle(3, 0x415d3c);
 
-      const dots = this.add.graphics();
-      dots.fillStyle(0x355739, 1);
+      const trees = [];
       for (let x = grove.x - grove.w / 2 + 35; x < grove.x + grove.w / 2; x += 70) {
         for (let y = grove.y - grove.h / 2 + 35; y < grove.y + grove.h / 2; y += 70) {
-          dots.fillCircle(x, y, 16);
+          const tree = this.add.sprite(x, y, 'prop_tree_01', (x + y) % 4)
+            .setOrigin(0.5, 0.8)
+            .setScale(2)
+            .setDepth(y);
+          trees.push(tree);
         }
       }
 
