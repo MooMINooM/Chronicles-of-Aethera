@@ -40,6 +40,12 @@ export default class BootScene extends Phaser.Scene {
       frameWidth: 96,
       frameHeight: 64
     });
+    this.load.image('crop_wheat_mature', 'assets/wheat_05.png');
+    this.load.image('crop_cabbage_mature', 'assets/cabbage_05.png');
+    this.load.spritesheet('animal_chicken', 'assets/spr_deco_chicken_01_strip4.png', {
+      frameWidth: 32,
+      frameHeight: 32
+    });
   }
 
   create() {

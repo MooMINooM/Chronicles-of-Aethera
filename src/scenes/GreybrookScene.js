@@ -102,6 +102,18 @@ export default class GreybrookScene extends Phaser.Scene {
         rows.lineBetween(farm.x - farm.w / 2 + 20, y, farm.x + farm.w / 2 - 20, y);
       }
 
+      const cropKey = farm.label === 'WEST FIELDS' ? 'crop_wheat_mature' : 'crop_cabbage_mature';
+      for (let x = farm.x - farm.w / 2 + 48; x < farm.x + farm.w / 2 - 20; x += 58) {
+        for (let y = farm.y - farm.h / 2 + 35; y < farm.y + farm.h / 2 - 15; y += 46) {
+          this.add.image(x, y, cropKey).setOrigin(0.5, 1).setScale(3).setDepth(y);
+        }
+      }
+
+      this.add.sprite(farm.x + farm.w / 2 - 55, farm.y, 'animal_chicken', 0)
+        .setOrigin(0.5, 1)
+        .setScale(2)
+        .setDepth(farm.y + 1);
+
       this.add.text(farm.x, farm.y, farm.label, {
         fontFamily: 'Arial',
         fontSize: '16px',
@@ -156,25 +168,39 @@ export default class GreybrookScene extends Phaser.Scene {
 
       this.addStaticBlocker(b.x, b.y, b.w, b.h);
 
+      if (b.id === 'mill') {
+        this.add.sprite(b.x, b.y + 20, 'prop_windmill', 0)
+          .setOrigin(0.5, 0.82)
+          .setScale(2.15)
+          .setDepth(b.y + 1);
+      }
+
       this.add.text(b.x, b.y - 8, b.name.toUpperCase(), {
         fontFamily: 'Arial',
         fontSize: b.w < 300 ? '13px' : '15px',
         color: '#fff6df',
         align: 'center',
         wordWrap: { width: Math.max(180, b.w - 25) }
-      }).setOrigin(0.5);
+      }).setOrigin(0.5).setDepth(b.y + 2);
 
       this.add.text(b.x, b.y + 28, `[${b.assetKey}]`, {
         fontFamily: 'monospace',
         fontSize: '10px',
         color: '#e6d4c1'
-      }).setOrigin(0.5);
+      }).setOrigin(0.5).setDepth(b.y + 2);
     });
   }
 
   createLandmarks() {
     GREYBROOK.landmarks.forEach((l) => {
-      if (l.radius) {
+      if (l.type === 'tree') {
+        const obj = this.add.sprite(l.x, l.y, 'prop_tree_01', 0)
+          .setOrigin(0.5, 0.82)
+          .setScale(5)
+          .setDepth(l.y);
+        obj.setData('assetKey', l.assetKey);
+        this.addStaticBlocker(l.x, l.y + 25, l.radius * 1.4, l.radius);
+      } else if (l.radius) {
         const obj = this.add.circle(l.x, l.y, l.radius, l.type === 'tree' ? 0x47704a : COLORS.landmark)
           .setStrokeStyle(4, 0x5c554b);
         obj.setData('assetKey', l.assetKey);
@@ -192,7 +218,7 @@ export default class GreybrookScene extends Phaser.Scene {
         color: '#2d2923',
         backgroundColor: '#fff6dfbb',
         padding: { x: 4, y: 2 }
-      }).setOrigin(0.5);
+      }).setOrigin(0.5).setDepth(l.y + 1);
     });
   }
 
